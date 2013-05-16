@@ -113,7 +113,7 @@ struct runtime
 
     /// Handler for new connections.
     void handle_accept(
-        boost::system::error_code const& error
+        error_code const& error
       , std::shared_ptr<connection> conn
         );
 
@@ -164,37 +164,37 @@ struct connection : std::enable_shared_from_this<connection>
     void async_read();
 
     /// Handler for the parcel size.
-    void handle_read_size(boost::system::error_code const& error);
+    void handle_read_size(error_code const& error);
 
     /// Handler for the data.
-    void handle_read_data(boost::system::error_code const& error);
+    void handle_read_data(error_code const& error);
 
     /// Asynchronously write a action to the socket. 
     void async_write(action const& act)
     {
-        std::function<void(boost::system::error_code const&)> h;
+        std::function<void(error_code const&)> h;
         async_write(act, h);
     } 
 
     /// Asynchronously write a action to the socket. 
     void async_write(
         action const& act
-      , std::function<void(boost::system::error_code const&)> handler
+      , std::function<void(error_code const&)> handler
         ); 
 
     /// This function is scheduled in the local_queue by async_write. It does
     /// the actual work of serializing the action.
     void async_write_worker(
         std::shared_ptr<action> act
-      , std::function<void(boost::system::error_code const&)> handler
+      , std::function<void(error_code const&)> handler
         );
 
     /// Write handler.
     void handle_write(
-        boost::system::error_code const& error
+        error_code const& error
       , std::shared_ptr<boost::uint64_t> out_size 
       , std::shared_ptr<std::vector<char> > out_buffer
-      , std::function<void(boost::system::error_code const&)> handler
+      , std::function<void(error_code const&)> handler
         )
     {
         if (handler)

@@ -11,22 +11,22 @@
 
 #include "coordinate.hpp"
 
-using namespace boost;
-using asio::ip::tcp;
+namespace asio = boost::asio;
+typedef boost::asio::ip::tcp asio_tcp;
 
 int main()
 {
     asio::io_service io_service;
 
-    tcp::endpoint endpoint(tcp::v4(), 2000);
-    tcp::acceptor acceptor(io_service, endpoint);
+    asio_tcp::endpoint endpoint(asio_tcp::v4(), 2000);
+    asio_tcp::acceptor acceptor(io_service, endpoint);
 
-    tcp::iostream s;
+    asio_tcp::iostream s;
 
     acceptor.accept(*s.rdbuf());
 
     {
-        archive::binary_iarchive la(s);
+        boost::archive::binary_iarchive la(s);
 
         coordinate c;
         la >> c;

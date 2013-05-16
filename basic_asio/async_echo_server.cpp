@@ -7,8 +7,9 @@
 #include <iostream>
 #include <boost/asio.hpp>
 
-using namespace boost;
-using asio::ip::tcp;
+using boost::system::error_code;
+namespace asio = boost::asio;
+typedef boost::asio::ip::tcp asio_tcp;
 
 int main()
 {
@@ -16,27 +17,27 @@ int main()
     {
         asio::io_service io_service;
 
-        tcp::endpoint endpoint(tcp::v4(), 2000);
-        tcp::acceptor acceptor(io_service, endpoint);
+        asio_tcp::endpoint endpoint(asio_tcp::v4(), 2000);
+        asio_tcp::acceptor acceptor(io_service, endpoint);
 
         for (;;)
         {
-            tcp::socket socket(io_service);
+            asio_tcp::socket socket(io_service);
 
-            system::error_code ec;
+            error_code ec;
             acceptor.accept(socket, ec);
             if (ec) continue;
 
             std::size_t const max_length = 1024;
             char msg[max_length];
 
-            std::function<void(system::error_code const&, std::size_t)>
-                f = [&](system::error_code const& ec, std::size_t bytes)
+            std::function<void(error_code const&, std::size_t)>
+                f = [&](error_code const& ec, std::size_t bytes)
                     {
                         if (ec) return;
                         std::cout << std::string(msg, bytes) << "\n";
                         asio::async_write(socket, asio::buffer(msg, bytes),
-                            [&](system::error_code const& ec, std::size_t)
+                            [&](error_code const& ec, std::size_t)
                             {
                                 if (ec) return;
                                 auto buf = asio::buffer(msg, max_length);

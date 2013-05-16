@@ -22,14 +22,12 @@ struct coordinate
     }
 };
 
-namespace archive = boost::archive;
-
 int main()
 {
     std::stringstream ss;
 
     {
-        archive::xml_oarchive sa(ss);
+        boost::archive::xml_oarchive sa(ss);
 
         coordinate c{17, 42};
         sa << BOOST_SERIALIZATION_NVP(c); 
@@ -38,7 +36,7 @@ int main()
     std::cout << ss.str();
 
     {
-        archive::xml_iarchive la(ss);
+        boost::archive::xml_iarchive la(ss);
 
         coordinate c;
         la >> BOOST_SERIALIZATION_NVP(c);

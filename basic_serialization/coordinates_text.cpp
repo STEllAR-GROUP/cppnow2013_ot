@@ -22,14 +22,12 @@ struct coordinate
     }
 };
 
-namespace archive = boost::archive;
-
 int main()
 {
     std::stringstream ss;
 
     {
-        archive::text_oarchive sa(ss);
+        boost::archive::text_oarchive sa(ss);
 
         coordinate c{17, 42};
         sa << c; 
@@ -38,7 +36,7 @@ int main()
     std::cout << ss.str();
 
     {
-        archive::text_iarchive la(ss);
+        boost::archive::text_iarchive la(ss);
 
         coordinate c;
         la >> c;

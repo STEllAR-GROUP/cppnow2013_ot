@@ -10,6 +10,7 @@
 
 #include <boost/asio.hpp>
 
+using boost::system::error_code;
 namespace asio = boost::asio;
 typedef boost::asio::ip::tcp asio_tcp;
 

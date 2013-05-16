@@ -71,7 +71,7 @@ std::shared_ptr<connection> runtime::connect(
     // available.
     for (boost::uint64_t i = 0; i < 64; ++i)
     {
-        boost::system::error_code ec;
+        error_code ec;
         asio::connect(conn->get_socket(), it, ec);
         if (!ec) break;
 
@@ -109,7 +109,7 @@ void runtime::async_accept()
 }
 
 void runtime::handle_accept(
-    boost::system::error_code const& error
+    error_code const& error
   , std::shared_ptr<connection> conn
     )
 {
@@ -224,7 +224,7 @@ connection::~connection()
     // Ensure a graceful shutdown.
     if (socket_.is_open())
     {
-        boost::system::error_code ec;
+        error_code ec;
         socket_.shutdown(asio_tcp::socket::shutdown_both, ec);
         socket_.close(ec);
     }
@@ -243,7 +243,7 @@ void connection::async_read()
                       , asio::placeholders::error));
 }
 
-void connection::handle_read_size(boost::system::error_code const& error)
+void connection::handle_read_size(error_code const& error)
 {
     if (error) return;
 
@@ -258,7 +258,7 @@ void connection::handle_read_size(boost::system::error_code const& error)
                       , asio::placeholders::error));
 }
 
-void connection::handle_read_data(boost::system::error_code const& error)
+void connection::handle_read_data(error_code const& error)
 {
     if (error) return;
 
@@ -273,7 +273,7 @@ void connection::handle_read_data(boost::system::error_code const& error)
 
 void connection::async_write(
     action const& act
-  , std::function<void(boost::system::error_code const&)> handler
+  , std::function<void(error_code const&)> handler
     )
 {
     std::shared_ptr<action> act_ptr(act.clone());
@@ -285,7 +285,7 @@ void connection::async_write(
 
 void connection::async_write_worker(
     std::shared_ptr<action> act
-  , std::function<void(boost::system::error_code const&)> handler
+  , std::function<void(error_code const&)> handler
     )
 {
     std::shared_ptr<std::vector<char> >

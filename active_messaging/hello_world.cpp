@@ -53,7 +53,7 @@ void hello_world_main(runtime& rt)
 
     for (auto node : conns) 
         node.second->async_write(t,
-            [count,&rt](boost::system::error_code const& ec)
+            [count,&rt](error_code const& ec)
             {
                 if (--(*count) == 0)
                     rt.stop();

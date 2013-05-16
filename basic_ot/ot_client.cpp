@@ -11,15 +11,15 @@
 
 #include "coordinate.hpp"
 
-using namespace boost;
-using asio::ip::tcp;
+namespace asio = boost::asio;
+typedef boost::asio::ip::tcp asio_tcp;
 
 int main()
 {
-    tcp::iostream s("localhost", "2000");
+    asio_tcp::iostream s("localhost", "2000");
 
     {
-        archive::binary_oarchive sa(s);
+        boost::archive::binary_oarchive sa(s);
 
         coordinate c{17, 42};
         sa << c; 
