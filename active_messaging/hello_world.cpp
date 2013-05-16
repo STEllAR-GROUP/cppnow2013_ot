@@ -5,50 +5,59 @@
 // Distributed under the Boost Software License, Version 1.0. (See accompanying
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 
+#include <condition_variable>
+
 #include <boost/scoped_ptr.hpp>
 #include <boost/program_options.hpp>
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/tracking.hpp>
 #include <boost/serialization/base_object.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
 
-#include "server.hpp"
-#include "client.hpp"
-#include "portable_binary_iarchive.hpp"
-#include "portable_binary_oarchive.hpp"
+#include "runtime.hpp"
 
 namespace po = boost::program_options;
 
-server* server_ = 0; 
-client* client_ = 0; 
-
-struct hello_world_task : task
+struct hello_world_action : action
 {
-    void operator()()
+    void operator()(runtime& rt)
     {
         std::cout << "hello world\n";
+
+        rt.stop();
     }
 
-    task* clone() const
+    action* clone() const
     {
-        return new hello_world_task;
+        return new hello_world_action;
     }
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar & boost::serialization::base_object<task>(*this);
+        ar & boost::serialization::base_object<action>(*this);
     }
 };
 
-BOOST_CLASS_EXPORT_GUID(hello_world_task, "hello_world_task");
-BOOST_CLASS_TRACKING(hello_world_task, boost::serialization::track_never);
+BOOST_CLASS_EXPORT_GUID(hello_world_action, "hello_world_action");
+BOOST_CLASS_TRACKING(hello_world_action, boost::serialization::track_never);
 
-void hello_world_main()
+void hello_world_main(runtime& rt)
 {
-    hello_world_task t;
+    hello_world_action t;
 
-    for (auto node : client_->get_connections()) 
-        node.second->async_write(t);
+    auto conns = rt.get_connections();
+
+    std::shared_ptr<boost::uint64_t> count(new boost::uint64_t(conns.size()));
+
+    for (auto node : conns) 
+        node.second->async_write(t,
+            [count,&rt](boost::system::error_code const& ec)
+            {
+                if (--(*count) == 0)
+                    rt.stop();
+            });
 }
 
 int main(int argc, char** argv)
@@ -58,7 +67,7 @@ int main(int argc, char** argv)
 
     po::options_description
         cmdline("Usage: hello_world --port <port> "
-                " --remote-host <hostname> --remote-port <port> [options]");
+                " [--remote-host <hostname> --remote-port <port>]");
 
     cmdline.add_options()
         ( "help,h"
@@ -69,11 +78,11 @@ int main(int argc, char** argv)
         , "TCP port to listen on")
 
         ( "remote-host"
-        , po::value<std::string>()->default_value("localhost")
+        , po::value<std::string>()
         , "hostname or IP to connect to")
 
         ( "remote-port"
-        , po::value<std::string>()->default_value("9001")
+        , po::value<std::string>()
         , "TCP port to connect to")
     ;
 
@@ -88,25 +97,37 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    boost::uint16_t port = boost::lexical_cast<boost::uint16_t>(
-        vm["port"].as<std::string>());
+    std::string port = vm["port"].as<std::string>();
 
-    std::string remote_host = vm["remote-host"].as<std::string>();
-    boost::uint16_t remote_port = boost::lexical_cast<boost::uint16_t>(
-        vm["remote-port"].as<std::string>());
+    std::shared_ptr<runtime> rt;
 
-    server_ = new server(port, hello_world_main);
-    client_ = new client(*server_, remote_host, remote_port);
+    if (vm.count("remote-host") || vm.count("remote-port"))
+    {
+        rt.reset(new runtime(port));
 
-    boost::scoped_ptr<server> s(server_);
-    boost::scoped_ptr<client> c(client_);
+        std::cout << "Running as client, will not execute hello_world_main\n";
 
-    server_->start();
-    client_->start();
+        std::string remote_host = "localhost", remote_port = port;
 
-    server_->run();
+        if (vm.count("remote-host"))
+            remote_host = vm["remote-host"].as<std::string>();
 
-    server_->stop();
+        if (vm.count("remote-port"))
+            remote_port = vm["remote-port"].as<std::string>();
+
+        rt->connect(remote_host, remote_port);
+    }
+
+    else
+    {
+        rt.reset(new runtime(port, hello_world_main));
+
+        std::cout << "Running as server, will execute hello_world_main\n";
+    }
+
+    rt->start();
+
+    rt->run();
 
     return 0;
 }

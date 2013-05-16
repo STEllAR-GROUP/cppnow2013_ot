@@ -25,21 +25,26 @@ int main()
 
             system::error_code ec;
             acceptor.accept(socket, ec);
+            if (ec) continue;
 
-            if (!ec)
-            {
-                std::size_t const max_length = 1024;
-                char msg[max_length];
+            std::size_t const max_length = 1024;
+            char msg[max_length];
 
-                socket.async_read_some(asio::buffer(msg, max_length),
-                    [&](system::error_code const& ec, std::size_t bytes)
+            std::function<void(system::error_code const&, std::size_t)>
+                f = [&](system::error_code const& ec, std::size_t bytes)
                     {
+                        if (ec) return;
                         std::cout << std::string(msg, bytes) << "\n";
-                        if (!ec)
-                            asio::async_write(socket, asio::buffer(msg, bytes),
-                                [](system::error_code const&, std::size_t) {});
-                    });
-            }
+                        asio::async_write(socket, asio::buffer(msg, bytes),
+                            [&](system::error_code const& ec, std::size_t)
+                            {
+                                if (ec) return;
+                                auto buf = asio::buffer(msg, max_length);
+                                socket.async_read_some(buf, f);
+                            });
+                    };
+
+            socket.async_read_some(asio::buffer(msg, max_length), f);
 
             io_service.run();
         }

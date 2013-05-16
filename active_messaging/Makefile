@@ -8,7 +8,7 @@ endif
 
 CXXFLAGS+=-std=c++11 
 LIBS=-lboost_system -lboost_program_options -lboost_serialization -lboost_program_options
-ADDITIONAL_SOURCES=portable_binary_iarchive.cpp portable_binary_oarchive.cpp server.cpp client.cpp
+ADDITIONAL_SOURCES=runtime.cpp 
 PROGRAMS=hello_world 
 DIRECTORIES=build
 
